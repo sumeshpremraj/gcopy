@@ -1,0 +1,54 @@
+Downloading a directory from google cloud storage with python.
+
+Google cloud SDK provides a utility known as gsutil.
+Gsutil allows a user to transfer files between your computer and a
+bucket in google cloud storage.
+
+An example of use is:
+gsutil cp -r gs://online-infra-engineer-test/mydir /some/path
+which will copy "mydir" and it's content recursively to "/some/path"
+from the "online-infra-engineer-test" bucket.
+
+Please re-implement gsutil cp -r functionality showcased above using only python.
+
+The initial condition is as follows:
+- gs://online-infra-engineer-test is the source bucket
+- gs://online-infra-engineer-test/mydir is the folder to copy to your computer
+- "mydir" folder structure is as follows:
+mydir/
+mydir/a/
+mydir/a/1.txt
+mydir/a/b/
+mydir/a/b/2.txt
+
+Expected result:
+yourprogram.py gs://online-infra-engineer-test/mydir /some/path
+ls -R /some/path/mydir:
+a
+mydir/a:
+1.txt b
+mydir/a/b:
+2.txt
+
+It's important that the folder structure is preserved.
+
+You are free to use the google SDK python libraries to achieve this:
+https://cloud.google.com/storage/docs/reference/libraries#client-libraries-install-python
+You can access the test bucket mentioned above by using a private key attached
+to the email. We encourage not to share they key :)
+
+Bonus:
+lookup the -m option, implementing it's functionality in the above example is
+optional
+
+---
+-m	
+Causes supported operations (acl ch, acl set, cp, mv, rm, rsync, and setmeta) to run in parallel. This can significantly improve performance if you are performing operations on a large number of files over a reasonably fast network connection.
+
+gsutil performs the specified operation using a combination of multi-threading and multi-processing, using a number of threads and processors determined by the parallel_thread_count and parallel_process_count values set in the boto configuration file. You might want to experiment with these values, as the best values can vary based on a number of factors, including network speed, number of CPUs, and available memory.
+
+Using the -m option may make your performance worse if you are using a slower network, such as the typical network speeds offered by non-business home network plans. It can also make your performance worse for cases that perform all operations locally (e.g., gsutil rsync, where both source and destination URLs are on the local disk), because it can "thrash" your local disk.
+
+If a download or upload operation using parallel transfer fails before the entire transfer is complete (e.g. failing after 300 of 1000 files have been transferred), you will need to restart the entire transfer.
+
+Also, although most commands will normally fail upon encountering an error when the -m flag is disabled, all commands will continue to try all operations when -m is enabled with multiple threads or processes, and the number of failed operations (if any) will be reported as an exception at the end of the command's execution.
