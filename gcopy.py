@@ -7,9 +7,9 @@ from google.api_core.exceptions import NotFound
 class GCopy(object):
     def transfer_file(self, source, dest, blob, download):
         filename = blob.name[blob.name.rindex('/') + 1:]
-        dest = dest+blob.name
         # Check if this is a download or upload
         if download:
+            dest = dest + blob.name
             dest_dir = dest[:dest.rindex('/')]
             print("Switching to " + dest_dir)
             os.chdir(dest_dir)
