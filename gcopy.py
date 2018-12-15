@@ -40,9 +40,9 @@ class GCopy(object):
                 blob.upload_from_filename(dest)
             except NotFound as e:
                 # Use ANSI escape code to print ERROR in red
-                print("\033[91m ERROR \033[00m404: File " + filename + " not found")
+                print("\033[91mERROR\033[00m404: File " + filename + " not found")
             except Exception as e:
-                print("\033[91m ERROR \033[00m404: " + str(e))
+                print("\033[91m[ERROR]\033[00m404 " + str(e))
             else:
                 print("Done.")
 
@@ -66,7 +66,7 @@ class GCopy(object):
             self.create_dir(dest+blob.name)
             self.transfer_file(source, dest, blob, download)
 
-        print("\n \033[92m [OK] \033[00m Transfer completed.")
+        print("\n\033[92m[OK]\033[00m Transfer completed.")
 
 
 if __name__ == "__main__":
