@@ -17,9 +17,10 @@ class GCopy(object):
             try:
                 blob.download_to_filename(dest)
             except NotFound as e:
-                print("\[\033[1;31m\] 404: File " + filename + " not found")
+                # Use ANSI escape code to print ERROR in red
+                print("\033[91m ERROR \033[00m404: File " + filename + " not found")
             except Exception as e:
-                print(e)
+                print("\033[91m ERROR \033[00m404: " + str(e))
             else:
                 print("Download completed.")
 
@@ -63,8 +64,6 @@ if __name__ == "__main__":
 
     source = sys.argv[1]
     dest = sys.argv[2]
-
-    # TODO: Check which arg has gs:// and pass it as `remote` arg to copy_full(remote, local)
 
     if source.startswith("gs://"):
         full_path = source
