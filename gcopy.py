@@ -60,7 +60,10 @@ class GCopy(object):
             sys.exit(1)
 
         # TODO: Filter blobs by source path and transfer only those
-        blobs = bucket.list_blobs()
+        #print("source = " + source)
+        prefix = '/'.join(source[5:].split('/')[1:])
+        #print("prefix = " + prefix)
+        blobs = bucket.list_blobs(prefix=prefix)
         for blob in blobs:
             print("\nProcessing file " + str(blob.name))
             self.create_dir(dest+blob.name)
@@ -72,6 +75,7 @@ class GCopy(object):
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Invalid arguments")
+        # TODO: Print help text
         sys.exit(1)
 
     source = sys.argv[1]
@@ -88,6 +92,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Add trailing slash to local path, if required
+    # TODO: Do this only for local path
     if full_path[-1] != '/':
         full_path += '/'
 
