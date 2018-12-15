@@ -48,21 +48,23 @@ class GCopy(object):
 
     def create_dir(self, path):
         # Create only if path doesn't exist
-        dirs = path.rindex('/')
-        if not os.path.exists(path[:dirs]):
+        dirs = os.path.dirname(path)
+        if not os.path.exists(dirs):
             # makedirs creates nested directories for given path
-            print("Creating " + path[:dirs])
-            os.makedirs(path[:dirs])
+            print("Creating " + dirs)
+            os.makedirs(dirs)
 
     def copy_full(self, source, dest, download):
         if not os.path.exists(dest):
             print(dest + " does not exist, please create it first")
             sys.exit(1)
 
-        # TODO: Filter blobs by source path and transfer only those
         #print("source = " + source)
+
+        # for path: gs://online-infra-engineer-test/mydir/a/b/
+        # extract: mydir/a/b/
         prefix = '/'.join(source[5:].split('/')[1:])
-        #print("prefix = " + prefix)
+        # print("prefix = " + prefix)
         blobs = bucket.list_blobs(prefix=prefix)
         for blob in blobs:
             print("\nProcessing file " + str(blob.name))
