@@ -5,8 +5,9 @@ from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
 class GCopy(object):
-    def transfer_file(self, blob, dest, download):
+    def transfer_file(self, source, dest, blob, download):
         filename = blob.name[blob.name.rindex('/') + 1:]
+        dest = dest+blob.name
         # Check if this is a download or upload
         if download:
             dest_dir = dest[:dest.rindex('/')]
@@ -54,7 +55,7 @@ class GCopy(object):
         for blob in blobs:
             print("\nProcessing file " + str(blob.name))
             self.create_dir(dest+blob.name)
-            self.transfer_file(blob, dest + blob.name, download)
+            self.transfer_file(source, dest, blob, download)
 
 
 if __name__ == "__main__":
