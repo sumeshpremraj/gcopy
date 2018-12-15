@@ -6,9 +6,9 @@ from google.api_core.exceptions import NotFound
 
 class GCopy(object):
     def transfer_file(self, source, dest, blob, download):
-        filename = blob.name[blob.name.rindex('/') + 1:]
         # Check if this is a download or upload
         if download:
+            filename = blob.name[blob.name.rindex('/') + 1:]
             dest = dest + blob.name
             dest_dir = dest[:dest.rindex('/')]
             print("Switching to " + dest_dir)
@@ -23,19 +23,28 @@ class GCopy(object):
             except Exception as e:
                 print("\033[91m ERROR \033[00m404: " + str(e))
             else:
-                print("Download completed.")
+                print("Done.")
 
         else:
             # Upload
-            print("Uploading file " + blob.name + " to " + dest)
+
+            # filename =
+            source = source + filename
+            src_dir = source[:source.rindex('/')]
+            dest_dir = dest + filename
+            print("Switching to " + src_dir)
+            os.chdir(src_dir)
+
+            print("Uploading file " + filename + " to " + dest_dir)
             try:
-                blob.upload_from_filename(source)
+                blob.upload_from_filename(dest)
             except NotFound as e:
-                print("File not found")
+                # Use ANSI escape code to print ERROR in red
+                print("\033[91m ERROR \033[00m404: File " + filename + " not found")
             except Exception as e:
-                print(e)
+                print("\033[91m ERROR \033[00m404: " + str(e))
             else:
-                print("Upload completed.")
+                print("Done.")
 
     def create_dir(self, path):
         # Create only if path doesn't exist
@@ -56,6 +65,8 @@ class GCopy(object):
             print("\nProcessing file " + str(blob.name))
             self.create_dir(dest+blob.name)
             self.transfer_file(source, dest, blob, download)
+
+        print("\n \033[92m [OK] \033[00m Transfer completed.")
 
 
 if __name__ == "__main__":
