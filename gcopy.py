@@ -7,18 +7,20 @@ from google.api_core.exceptions import NotFound
 class GCopy(object):
     def transfer_file(self, blob, dest, download):
         # Check if this is a download or upload
-        print("Switching to " + dest[:dest.rindex('/')])
-        os.chdir(dest[:dest.rindex('/')])
+        dest_dir = dest[:dest.rindex('/')]
+        filename = blob.name[blob.name.rindex('/') + 1:]
+        print("\nSwitching to " + dest_dir)
+        os.chdir(dest_dir)
         if download:
-            print("Downloading file " + blob.name + " to " + dest)
+            print("\nDownloading file " + filename + " to " + dest_dir)
             try:
                 blob.download_to_filename(dest)
             except NotFound as e:
-                print("File not found")
+                print("404: File " + filename + " not found")
             except Exception as e:
                 print(e)
             else:
-                print("Download completed.")
+                print("\nDownload completed.")
 
         else:
             # Upload
@@ -56,8 +58,7 @@ class GCopy(object):
 
         blobs = bucket.list_blobs()
         for blob in blobs:
-            # print(blob.name)
-            print("Processing file " + str(blob.name))
+            print("\nProcessing file " + str(blob.name))
             self.create_dir(dest+blob.name)
             self.transfer_file(blob, dest + blob.name, download)
 
@@ -80,7 +81,12 @@ if __name__ == "__main__":
         print("One of source/destination should be a Google Cloud Storage URL")
         sys.exit(1)
 
+    # Add trailing slash to local path, if required
+    if full_path[-1] != '/':
+        full_path += '/'
+
     bucket_name = full_path.split(':')[1].lstrip('/').split('/')[0]
+    print("Bucket: " + bucket_name,)
     storage_client = storage.Client.from_service_account_json('service_account.json')
     bucket = storage_client.get_bucket(bucket_name)
 
