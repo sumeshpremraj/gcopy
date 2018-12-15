@@ -6,21 +6,22 @@ from google.api_core.exceptions import NotFound
 
 class GCopy(object):
     def transfer_file(self, blob, dest, download):
-        # Check if this is a download or upload
-        dest_dir = dest[:dest.rindex('/')]
         filename = blob.name[blob.name.rindex('/') + 1:]
-        print("\nSwitching to " + dest_dir)
-        os.chdir(dest_dir)
+        # Check if this is a download or upload
         if download:
-            print("\nDownloading file " + filename + " to " + dest_dir)
+            dest_dir = dest[:dest.rindex('/')]
+            print("Switching to " + dest_dir)
+            os.chdir(dest_dir)
+
+            print("Downloading file " + filename + " to " + dest_dir)
             try:
                 blob.download_to_filename(dest)
             except NotFound as e:
-                print("404: File " + filename + " not found")
+                print("\[\033[1;31m\] 404: File " + filename + " not found")
             except Exception as e:
                 print(e)
             else:
-                print("\nDownload completed.")
+                print("Download completed.")
 
         else:
             # Upload
@@ -43,19 +44,11 @@ class GCopy(object):
             os.makedirs(path[:dirs])
 
     def copy_full(self, source, dest, download):
-        """
-        source_dir = '/tmp/sumesh/'
-        sumesh
-        - a
-            - 1.txt
-            - b
-                -2.txt
-        dest_dir = '/tmp/arjita/'
-        """
         if not os.path.exists(dest):
             print(dest + " does not exist, please create it first")
             sys.exit(1)
 
+        # TODO: Filter blobs by source path and transfer only those
         blobs = bucket.list_blobs()
         for blob in blobs:
             print("\nProcessing file " + str(blob.name))
@@ -70,6 +63,8 @@ if __name__ == "__main__":
 
     source = sys.argv[1]
     dest = sys.argv[2]
+
+    # TODO: Check which arg has gs:// and pass it as `remote` arg to copy_full(remote, local)
 
     if source.startswith("gs://"):
         full_path = source
