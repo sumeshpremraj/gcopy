@@ -11,11 +11,17 @@ from google.api_core.exceptions import NotFound
 
 class GCopy(object):
     def __init__(self):
-        self.parallel_process_count = 0
         self.num_threads = 0
 
 
     def parse_config(self):
+        """
+            Parse boto config and set maximum number of threads to (process count * thread count)
+            Two reasons:
+                - Linux implements processes and threads similarly
+                - simplify implementation (managing processes AND threads will get complicated, for little benefit in a
+                network IO-bound script like this)
+        """
         try:
             filename = os.path.expanduser('~/.boto')
             config = configparser.ConfigParser()
@@ -24,8 +30,7 @@ class GCopy(object):
             if not len(res):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
 
-            self.num_threads = int(config['default']['parallel_thread_count'])
-            self.parallel_process_count = config['default']['parallel_process_count']
+            self.num_threads = int(config['default']['parallel_thread_count']) * int(config['default']['parallel_process_count'])
 
         except configparser.NoSectionError as e:
             print('default section not found')
