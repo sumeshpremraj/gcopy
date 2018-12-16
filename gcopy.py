@@ -34,30 +34,37 @@ class GCopy(object):
         except Exception as e:
             print(str(e))
 
-    def transfer_file(self, source, dest, blob, download):
+    def transfer_file(self, q):
         # Check if this is a download or upload
-        if download:
-            filename = blob.name[blob.name.rindex('/') + 1:]
-            dest = dest + blob.name
-            dest_dir = dest[:dest.rindex('/')]
-            print("Switching to " + dest_dir)
-            os.chdir(dest_dir)
+        while not q.empty():
+            info = q.get()
+            dest = info['dest']
+            blob = info['blob']
+            download = info['download']
 
-            print("Downloading file " + filename + " to " + dest_dir)
-            try:
-                blob.download_to_filename(dest)
-            except NotFound as e:
-                # Use ANSI escape code to print ERROR in red
-                print("\033[91m ERROR \033[00m404: File " + filename + " not found")
-            except Exception as e:
-                print("\033[91m ERROR \033[00m404: " + str(e))
+            if download:
+                filename = blob.name[blob.name.rindex('/') + 1:]
+                dest = dest + blob.name
+                dest_dir = dest[:dest.rindex('/')]
+                print("Switching to " + dest_dir)
+                os.chdir(dest_dir)
+
+                print("Downloading file " + filename + " to " + dest_dir)
+                try:
+                    blob.download_to_filename(dest)
+                except NotFound as e:
+                    # Use ANSI escape code to print ERROR in red
+                    print("\033[91m ERROR \033[00m404: File " + filename + " not found")
+                except Exception as e:
+                    print("\033[91m ERROR \033[00m404: " + str(e))
+                else:
+                    print("Done.")
+                    q.task_done()
+
             else:
-                print("Done.")
-
-        else:
-            # Upload
-            # Implement if required
-            pass
+                # Upload
+                # Implement if required
+                pass
 
     def create_dir(self, path):
         # Create only if path doesn't exist
@@ -76,7 +83,6 @@ class GCopy(object):
             # for path = gs://online-infra-engineer-test/mydir/a/b/
             # prefix = mydir/a/b/
             prefix = '/'.join(source[5:].split('/')[1:])
-            threads = []
             q = Queue(maxsize=0)
 
             blobs = bucket.list_blobs(prefix=prefix)
@@ -87,17 +93,11 @@ class GCopy(object):
                 q.put(info)
                 # self.transfer_file(source, dest, blob, download)
 
-            while not q.empty():
-                task = q.get()
-                thread = Thread(target=self.transfer_file, args=[task['source'], task['dest'], task['blob'], task['download']])
+            for i in range(self.num_threads):
+                thread = Thread(target=self.transfer_file, args=[q])
                 thread.start()
-                threads.append(thread)
 
-            for thread in threads:
-                thread.join()
-
-            # for el in list(self.q.queue):
-            #     print(el)
+            q.join()
 
         else:
             # Upload
