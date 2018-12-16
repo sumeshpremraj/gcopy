@@ -1,11 +1,36 @@
 #!/usr/bin/env python
 import os
+import errno
 import sys
+import argparse
+import configparser
 from threading import Thread
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
 class GCopy(object):
+    def __init__(self):
+        self.parallel_thread_count = self.parallel_process_count = ''
+
+    def parse_config(self):
+        try:
+            filename = os.path.expanduser('~/.boto')
+            config = configparser.ConfigParser()
+            res = config.read(filename)
+
+            if not len(res):
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+
+            self.parallel_thread_count = config['default']['parallel_thread_count']
+            self.parallel_process_count = config['default']['parallel_process_count']
+
+        except configparser.NoSectionError as e:
+            print('default section not found')
+        except configparser.NoOptionError as e:
+            print('parallel thread/process count option not found')
+        except Exception as e:
+            print(str(e))
+
     def transfer_file(self, source, dest, blob, download):
         # Check if this is a download or upload
         if download:
@@ -39,7 +64,7 @@ class GCopy(object):
             print("Creating " + dirs)
             os.makedirs(dirs)
 
-    def copy_full(self, source, dest, download):
+    def copy_full(self, source, dest, download, parallel_thread_count=None, parallel_process_count=None):
         if download:
             if not os.path.exists(dest):
                 print(dest + " does not exist, please create it first")
@@ -48,8 +73,6 @@ class GCopy(object):
             # for path = gs://online-infra-engineer-test/mydir/a/b/
             # prefix = mydir/a/b/
             prefix = '/'.join(source[5:].split('/')[1:])
-            # print("prefix = " + prefix)
-
             threads = []
 
             blobs = bucket.list_blobs(prefix=prefix)
@@ -57,7 +80,8 @@ class GCopy(object):
                 print("\nProcessing file " + str(blob.name))
                 self.create_dir(dest+blob.name)
 
-                #self.transfer_file(source, dest, blob, download)
+                # self.transfer_file(source, dest, blob, download)
+
                 process = Thread(target=self.transfer_file, args=[source, dest, blob, download])
                 process.start()
                 threads.append(process)
@@ -74,13 +98,14 @@ class GCopy(object):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Invalid arguments")
-        # TODO: Print help text
-        sys.exit(1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", help="", action="store_true")
+    parser.add_argument("source", help="Source URL (gs://xxxx)")
+    parser.add_argument("dest", help="Local path to download to (this directory must exist)")
+    args = parser.parse_args()
 
-    source = sys.argv[1]
-    dest = sys.argv[2]
+    source = args.source
+    dest = args.dest
 
     if source.startswith("gs://"):
         download = True
@@ -100,4 +125,7 @@ if __name__ == "__main__":
     bucket = storage_client.get_bucket(bucket_name)
 
     gc = GCopy()
+    if args.m:
+        gc.parse_config()
+
     gc.copy_full(source, dest, download)
