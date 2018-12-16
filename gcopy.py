@@ -30,10 +30,6 @@ class GCopy(object):
             filename = os.path.expanduser('~/.boto')
             config = configparser.ConfigParser()
             res = config.read(filename)
-
-            if not len(res):
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
-
             self.num_threads = int(config['default']['parallel_thread_count']) * int(config['default']['parallel_process_count'])
 
         except configparser.NoSectionError as e:
