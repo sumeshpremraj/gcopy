@@ -43,6 +43,7 @@ class GCopy(object):
             download = info['download']
 
             if download:
+                self.create_dir(dest + blob.name)
                 filename = blob.name[blob.name.rindex('/') + 1:]
                 dest = dest + blob.name
                 dest_dir = dest[:dest.rindex('/')]
