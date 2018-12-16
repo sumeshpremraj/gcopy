@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import sys
+from threading import Thread
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
@@ -48,13 +49,25 @@ class GCopy(object):
             # prefix = mydir/a/b/
             prefix = '/'.join(source[5:].split('/')[1:])
             # print("prefix = " + prefix)
+
+            threads = []
+
             blobs = bucket.list_blobs(prefix=prefix)
             for blob in blobs:
                 print("\nProcessing file " + str(blob.name))
                 self.create_dir(dest+blob.name)
-                self.transfer_file(source, dest, blob, download)
+
+                #self.transfer_file(source, dest, blob, download)
+                process = Thread(target=self.transfer_file, args=[source, dest, blob, download])
+                process.start()
+                threads.append(process)
+
+            for process in threads:
+                process.join()
+
 
         else:
+            # Upload
             pass
 
         print("\n\033[92m[OK]\033[00m Transfer completed.")
