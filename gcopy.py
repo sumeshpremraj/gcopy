@@ -85,19 +85,19 @@ class GCopy(object):
             # prefix = mydir/a/b/
             prefix = '/'.join(source[5:].split('/')[1:])
             q = Queue(maxsize=0)
+            count = 0
 
             blobs = bucket.list_blobs(prefix=prefix)
             for blob in blobs:
                 print("\nProcessing file " + str(blob.name))
-                self.create_dir(dest + blob.name)
                 info = {'source': source, 'dest': dest, 'blob': blob, 'download': download}
                 q.put(info)
+                count += 1
                 # self.transfer_file(source, dest, blob, download)
 
-            for i in range(self.num_threads):
+            for i in range(min(self.num_threads, count)):
                 thread = Thread(target=self.transfer_file, args=[q])
                 thread.start()
-
             q.join()
 
         else:
