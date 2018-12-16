@@ -24,7 +24,7 @@ class GCopy(object):
             if not len(res):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
 
-            self.num_threads = config['default']['parallel_thread_count']
+            self.num_threads = int(config['default']['parallel_thread_count'])
             self.parallel_process_count = config['default']['parallel_process_count']
 
         except configparser.NoSectionError as e:
