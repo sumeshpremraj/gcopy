@@ -136,7 +136,7 @@ class GCopy(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", help="", action="store_true")
+    parser.add_argument("-m", help="Use multithreading (can worsen performance on slow networks, use with caution)", action="store_true")
     parser.add_argument("source", help="Source URL (gs://xxxx)")
     parser.add_argument("dest", help="Local path to download to (this directory must exist)")
     args = parser.parse_args()
