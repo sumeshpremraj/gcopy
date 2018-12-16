@@ -4,6 +4,7 @@ import sys
 import argparse
 import configparser
 from threading import Thread
+from itertools import tee
 from queue import Queue
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
@@ -111,7 +112,11 @@ class GCopy(object):
             # Setting count instead of using q.qsize() because it may not be thread-safe
             count = 0
 
-            blobs = bucket.list_blobs(prefix=prefix)
+            tmp, blobs = tee(bucket.list_blobs(prefix=prefix))
+
+            if not any(tmp):
+                print("Got empty blob list from remote. Directory is empty or does not exist")
+                sys.exit()
 
             # Parse blob list and store details into queue
             for blob in blobs:
