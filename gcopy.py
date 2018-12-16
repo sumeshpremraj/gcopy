@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import os
-import errno
 import sys
 import argparse
 import configparser
@@ -18,7 +17,7 @@ class GCopy(object):
         self.num_threads = 1
 
 
-    def parse_config(self):
+    def parse_boto_config(self):
         """
         Parse boto config and set maximum number of threads to (process count * thread count)
         Two reasons:
@@ -166,6 +165,6 @@ if __name__ == "__main__":
 
     gc = GCopy()
     if args.m:
-        gc.parse_config()
+        gc.parse_boto_config()
 
     gc.copy_full(source, dest)
