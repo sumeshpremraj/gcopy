@@ -11,7 +11,11 @@ from google.api_core.exceptions import NotFound
 
 class GCopy(object):
     def __init__(self):
-        self.num_threads = 0
+        """
+            Set thread count as 1 by default
+            If `-m` flag is set, parse configs and override this value
+        """
+        self.num_threads = 1
 
 
     def parse_config(self):
@@ -142,5 +146,6 @@ if __name__ == "__main__":
     gc = GCopy()
     if args.m:
         gc.parse_config()
+    else:
 
     gc.copy_full(source, dest, download)
