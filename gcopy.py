@@ -5,12 +5,16 @@ import sys
 import argparse
 import configparser
 from threading import Thread
+from queue import Queue
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
 class GCopy(object):
     def __init__(self):
-        self.parallel_thread_count = self.parallel_process_count = ''
+        self.parallel_process_count = 0
+        self.q = Queue(maxsize=0)
+        self.num_threads = 0
+
 
     def parse_config(self):
         try:
@@ -21,7 +25,7 @@ class GCopy(object):
             if not len(res):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
 
-            self.parallel_thread_count = config['default']['parallel_thread_count']
+            self.num_threads = config['default']['parallel_thread_count']
             self.parallel_process_count = config['default']['parallel_process_count']
 
         except configparser.NoSectionError as e:
@@ -78,10 +82,11 @@ class GCopy(object):
             blobs = bucket.list_blobs(prefix=prefix)
             for blob in blobs:
                 print("\nProcessing file " + str(blob.name))
-                self.create_dir(dest+blob.name)
+                self.create_dir(dest + blob.name)
 
                 # self.transfer_file(source, dest, blob, download)
-
+                success = False
+                self.q.put((blob.name, status))
                 process = Thread(target=self.transfer_file, args=[source, dest, blob, download])
                 process.start()
                 threads.append(process)
@@ -89,6 +94,8 @@ class GCopy(object):
             for process in threads:
                 process.join()
 
+            # for el in list(self.q.queue):
+            #     print(el)
 
         else:
             # Upload
