@@ -157,9 +157,11 @@ if __name__ == "__main__":
         print("One of source/destination should be a Google Cloud Storage URL")
         sys.exit(1)
 
-    # Add trailing slash to local path, if required
+    # Add trailing slash, if required
     if dest[-1] != '/':
         dest += '/'
+    if source[-1] != '/':
+        source += '/'
 
     bucket_name = source[5:].split('/')[0]
     print("Bucket: " + bucket_name,)
