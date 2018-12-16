@@ -73,7 +73,7 @@ class GCopy(object):
                 except Exception as e:
                     print("\033[91m ERROR \033[00m404: " + str(e))
                 else:
-                    print("Done.")
+                    print(dest_dir + filename + " completed")
                     q.task_done()
 
             else:
@@ -120,7 +120,7 @@ class GCopy(object):
 
             # Parse blob list and store details into queue
             for blob in blobs:
-                print("\nProcessing file " + str(blob.name))
+                print("Processing file " + str(blob.name))
                 info = {'source': source, 'dest': dest, 'blob': blob, 'download': download}
                 q.put(info)
                 count += 1
@@ -135,7 +135,7 @@ class GCopy(object):
             # Upload
             pass
 
-        print("\n\033[92m[OK]\033[00m Transfer completed.")
+        print("\033[92m[OK]\033[00m Transfer completed.")
 
 
 if __name__ == "__main__":
