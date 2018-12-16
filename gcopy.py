@@ -12,7 +12,6 @@ from google.api_core.exceptions import NotFound
 class GCopy(object):
     def __init__(self):
         self.parallel_process_count = 0
-        self.q = Queue(maxsize=0)
         self.num_threads = 0
 
 
@@ -78,21 +77,24 @@ class GCopy(object):
             # prefix = mydir/a/b/
             prefix = '/'.join(source[5:].split('/')[1:])
             threads = []
+            q = Queue(maxsize=0)
 
             blobs = bucket.list_blobs(prefix=prefix)
             for blob in blobs:
                 print("\nProcessing file " + str(blob.name))
                 self.create_dir(dest + blob.name)
-
+                info = {'source': source, 'dest': dest, 'blob': blob, 'download': download}
+                q.put(info)
                 # self.transfer_file(source, dest, blob, download)
-                success = False
-                self.q.put((blob.name, status))
-                process = Thread(target=self.transfer_file, args=[source, dest, blob, download])
-                process.start()
-                threads.append(process)
 
-            for process in threads:
-                process.join()
+            while not q.empty():
+                task = q.get()
+                thread = Thread(target=self.transfer_file, args=[task['source'], task['dest'], task['blob'], task['download']])
+                thread.start()
+                threads.append(thread)
+
+            for thread in threads:
+                thread.join()
 
             # for el in list(self.q.queue):
             #     print(el)
