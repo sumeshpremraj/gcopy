@@ -12,19 +12,19 @@ from google.api_core.exceptions import NotFound
 class GCopy(object):
     def __init__(self):
         """
-            Set thread count as 1 by default
-            If `-m` flag is set, parse configs and override this value
+        Set thread count as 1 by default
+        If `-m` flag is set, parse configs and override this value
         """
         self.num_threads = 1
 
 
     def parse_config(self):
         """
-            Parse boto config and set maximum number of threads to (process count * thread count)
-            Two reasons:
-                - Linux implements processes and threads similarly
-                - simplify implementation (managing processes AND threads will get complicated, for little benefit in a
-                network IO-bound script like this)
+        Parse boto config and set maximum number of threads to (process count * thread count)
+        Two reasons:
+            - Linux implements processes and threads similarly
+            - simplify implementation (managing processes AND threads will get complicated, for little benefit in a
+            network IO-bound script like this)
         """
         try:
             filename = os.path.expanduser('~/.boto')
@@ -37,22 +37,27 @@ class GCopy(object):
             self.num_threads = int(config['default']['parallel_thread_count']) * int(config['default']['parallel_process_count'])
 
         except configparser.NoSectionError as e:
-            print('default section not found')
+            print('Default section not found')
         except configparser.NoOptionError as e:
-            print('parallel thread/process count option not found')
+            print('Parallel thread/process count option not found')
         except Exception as e:
             print(str(e))
 
     def transfer_file(self, q):
-        # Check if this is a download or upload
+        """
+        Thread-safe method to transfer individual files
+        :param q: queue of details for file transfer
+        """
         while not q.empty():
             info = q.get()
             dest = info['dest']
             blob = info['blob']
             download = info['download']
 
+            # Check if this is a download or upload
             if download:
                 self.create_dir(dest + blob.name)
+
                 filename = blob.name[blob.name.rindex('/') + 1:]
                 dest = dest + blob.name
                 dest_dir = dest[:dest.rindex('/')]
@@ -63,7 +68,7 @@ class GCopy(object):
                 try:
                     blob.download_to_filename(dest)
                 except NotFound as e:
-                    # Use ANSI escape code to print ERROR in red
+                    # Use ANSI escape code to print [ERROR] in red
                     print("\033[91m ERROR \033[00m404: File " + filename + " not found")
                 except Exception as e:
                     print("\033[91m ERROR \033[00m404: " + str(e))
@@ -77,33 +82,50 @@ class GCopy(object):
                 pass
 
     def create_dir(self, path):
-        # Create only if path doesn't exist
+        """
+        Helper method to create `path` if required
+        :param path:
+        """
         dirs = os.path.dirname(path)
         if not os.path.exists(dirs):
             # makedirs creates nested directories for given path
             print("Creating " + dirs)
             os.makedirs(dirs)
 
-    def copy_full(self, source, dest, download, parallel_thread_count=None, parallel_process_count=None):
+    def copy_full(self, source, dest, download=True):
+        """
+        Main method to parse details and initialize threads for file transfer
+        :param source: remote path
+        :param dest: local path, must exist
+        :param download: optional parameter to use if we implement upload functionality too
+        """
         if download:
             if not os.path.exists(dest):
                 print(dest + " does not exist, please create it first")
                 sys.exit(1)
 
-            # for path = gs://online-infra-engineer-test/mydir/a/b/
-            # prefix = mydir/a/b/
+            """
+            Extract prefix for use as a filter in list_blobs()
+
+            For path = gs://online-infra-engineer-test/mydir/a/b/
+            We get prefix = mydir/a/b/
+            """
             prefix = '/'.join(source[5:].split('/')[1:])
             q = Queue(maxsize=0)
+
+            # Setting count instead of using q.qsize() because it may not be thread-safe
             count = 0
 
             blobs = bucket.list_blobs(prefix=prefix)
+
+            # Parse blob list and store details into queue
             for blob in blobs:
                 print("\nProcessing file " + str(blob.name))
                 info = {'source': source, 'dest': dest, 'blob': blob, 'download': download}
                 q.put(info)
                 count += 1
-                # self.transfer_file(source, dest, blob, download)
 
+            # Start threads for file transfer
             for i in range(min(self.num_threads, count)):
                 thread = Thread(target=self.transfer_file, args=[q])
                 thread.start()
@@ -126,6 +148,7 @@ if __name__ == "__main__":
     source = args.source
     dest = args.dest
 
+    # Simple validation. Better implementation would be to use regex here
     if source.startswith("gs://"):
         download = True
     elif dest.startswith("gs://"):
@@ -138,7 +161,7 @@ if __name__ == "__main__":
     if dest[-1] != '/':
         dest += '/'
 
-    bucket_name = source.split(':')[1].lstrip('/').split('/')[0]
+    bucket_name = source[5:].split('/')[0]
     print("Bucket: " + bucket_name,)
     storage_client = storage.Client.from_service_account_json('service_account.json')
     bucket = storage_client.get_bucket(bucket_name)
@@ -146,6 +169,5 @@ if __name__ == "__main__":
     gc = GCopy()
     if args.m:
         gc.parse_config()
-    else:
 
-    gc.copy_full(source, dest, download)
+    gc.copy_full(source, dest)
