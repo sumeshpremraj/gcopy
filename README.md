@@ -18,6 +18,10 @@ Installing dependencies
 Done
 $ ls service_account.json
 service_account.json
+$ cat ~/.boto
+[default]
+parallel_thread_count = 10
+parallel_process_count = 5
 $ ./gcopy -h
 usage: gcopy.py [-h] [-m] source dest
 
