@@ -9,6 +9,18 @@ from queue import Queue
 from google.cloud import storage
 from google.api_core.exceptions import NotFound
 
+
+def print_msg(msg, level="ERROR"):
+    """
+    Helper function to print [ERROR] in red using ANSI escape codes
+    """
+    if level == "ERROR":
+        print("\033[91m[ERROR]\033[00m: " + msg)
+    elif level == "INFO":
+        print("\033[92m[OK]\033[00m "+ msg)
+
+
+
 class GCopy(object):
     def __init__(self):
         """
@@ -29,15 +41,16 @@ class GCopy(object):
         try:
             filename = os.path.expanduser('~/.boto')
             config = configparser.ConfigParser()
-            res = config.read(filename)
+            config.read(filename)
             self.num_threads = int(config['default']['parallel_thread_count']) * int(config['default']['parallel_process_count'])
+            print("Setting thread limit to " + str(self.num_threads) + "\n")
 
         except configparser.NoSectionError as e:
-            print('Default section not found')
+            print_msg('Default section not found')
         except configparser.NoOptionError as e:
-            print('Parallel thread/process count option not found')
+            print_msg('Parallel thread/process count option not found')
         except Exception as e:
-            print(str(e))
+            print_msg(str(e))
 
     def transfer_file(self, q):
         """
@@ -64,10 +77,10 @@ class GCopy(object):
                 try:
                     blob.download_to_filename(dest)
                 except NotFound as e:
-                    # Use ANSI escape code to print [ERROR] in red
-                    print("\033[91m ERROR \033[00m404: File " + filename + " not found")
+
+                    print_msg(" File " + filename + " not found")
                 except Exception as e:
-                    print("\033[91m ERROR \033[00m404: " + str(e))
+                    print_msg(str(e))
                 else:
                     print(dest_dir + filename + " completed")
                     q.task_done()
@@ -97,7 +110,7 @@ class GCopy(object):
         """
         if download:
             if not os.path.exists(dest):
-                print(dest + " does not exist, please create it first")
+                print_msg(dest + " does not exist, please create it first")
                 sys.exit(1)
 
             """
@@ -115,7 +128,7 @@ class GCopy(object):
             tmp, blobs = tee(bucket.list_blobs(prefix=prefix))
 
             if not any(tmp):
-                print("Got empty blob list from remote. Directory is empty or does not exist")
+                print_msg("Got empty blob list from remote. Directory is empty or does not exist")
                 sys.exit(1)
 
             # Parse blob list and store details into queue
@@ -135,7 +148,7 @@ class GCopy(object):
             # Upload
             pass
 
-        print("\033[92m[OK]\033[00m Transfer completed.")
+        print_msg("Transfer completed.", level="INFO")
 
 
 if __name__ == "__main__":
@@ -154,7 +167,7 @@ if __name__ == "__main__":
     elif dest.startswith("gs://"):
         download = False
     else:
-        print("One of source/destination should be a Google Cloud Storage URL")
+        print_msg("One of source/destination should be a Google Cloud Storage URL")
         sys.exit(1)
 
     # Add trailing slash, if required
@@ -164,12 +177,13 @@ if __name__ == "__main__":
         source += '/'
 
     bucket_name = source[5:].split('/')[0]
-    print("Bucket: " + bucket_name,)
+    print("Bucket: " + bucket_name)
     storage_client = storage.Client.from_service_account_json('service_account.json')
     bucket = storage_client.get_bucket(bucket_name)
 
     gc = GCopy()
     if args.m:
+        print("\n-m flag specified, parsing ~/.boto to set thread limit")
         gc.parse_boto_config()
 
     gc.copy_full(source, dest)
