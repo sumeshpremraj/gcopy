@@ -7,13 +7,15 @@ It supports optional multithreading by using `-m` flag, with thread limits set i
 ### Requirements
 * Python3
 * Google Cloud Storage SDK (`google-cloud-storage`)
-* Private key for access to a storage bucket
+* Private key for access to a storage bucket (service_account.json at root of project dir, git is configured to ignore this file so you don't accidentally commit it)
 
 ### Usage
 ```commandline
 $ python3 -m venv .venv
 $ source .venv/bin/activate
 $ pip install -r requirements.txt
+$ ls service_account.json
+service_account.json
 $ ./gcopy -h
 usage: gcopy.py [-h] [-m] source dest
 
