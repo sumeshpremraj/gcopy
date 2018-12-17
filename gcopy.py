@@ -45,12 +45,12 @@ class GCopy(object):
             self.num_threads = int(config['default']['parallel_thread_count']) * int(config['default']['parallel_process_count'])
             print("Setting thread limit to " + str(self.num_threads) + "\n")
 
-        except configparser.NoSectionError as e:
-            print_msg('Default section not found')
+        except (configparser.NoSectionError, KeyError) as e:
+            print('Default section not found, falling back to single-threaded mode\n')
         except configparser.NoOptionError as e:
-            print_msg('Parallel thread/process count option not found')
+            print('Parallel thread/process count option not found, falling back to single-threaded mode\n')
         except Exception as e:
-            print_msg(str(e))
+            print(str(e))
 
     def transfer_file(self, q):
         """
