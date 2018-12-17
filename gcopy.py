@@ -116,7 +116,7 @@ class GCopy(object):
 
             if not any(tmp):
                 print("Got empty blob list from remote. Directory is empty or does not exist")
-                sys.exit()
+                sys.exit(1)
 
             # Parse blob list and store details into queue
             for blob in blobs:
