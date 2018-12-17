@@ -82,7 +82,7 @@ class GCopy(object):
                 except Exception as e:
                     print_msg(str(e))
                 else:
-                    print(dest_dir + filename + " completed")
+                    print(dest_dir + '/' + filename + " completed")
                     q.task_done()
 
             else:
