@@ -11,9 +11,11 @@ It supports optional multithreading by using `-m` flag, with thread limits set i
 
 ### Usage
 ```commandline
-$ python3 -m venv .venv
-$ source .venv/bin/activate
-$ pip install -r requirements.txt
+$ ./build.sh
+Setting up virtual env...
+Activating venv
+Installing dependencies
+Done
 $ ls service_account.json
 service_account.json
 $ ./gcopy -h
