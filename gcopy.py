@@ -139,10 +139,14 @@ class GCopy(object):
                 count += 1
 
             # Start threads for file transfer
-            for i in range(min(self.num_threads, count)):
-                thread = Thread(target=self.transfer_file, args=[q])
-                thread.start()
-            q.join()
+            while count > 0:
+                for i in range(min(self.num_threads, count)):
+                    thread = Thread(target=self.transfer_file, args=[q])
+                    thread.start()
+                    # print("Starting thread " + str(count))
+                    count -= 1
+                # Wait for running threads to complete before starting more threads
+                q.join()
 
         else:
             # Upload
